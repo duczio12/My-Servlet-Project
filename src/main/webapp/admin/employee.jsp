@@ -3,7 +3,7 @@
 <%@ include file="layout/header.jsp" %>
 <%@ include file="layout/sidebar.jsp" %>
 
-<div class="container-fluid px-4">
+<div class="container-fluid px-1">
     <h2 class="mt-4">Danh sách nhân viên</h2>
 
     <a href="${pageContext.request.contextPath}/admin/employee?action=new" class="btn btn-success mb-3">+ Thêm nhân viên</a>

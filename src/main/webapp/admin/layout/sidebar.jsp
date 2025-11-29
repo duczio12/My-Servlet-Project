@@ -12,11 +12,11 @@
                     <a class="nav-link" href="${pageContext.request.contextPath}/admin/employee">
                         <div class="sb-nav-link-icon"><i class="fas fa-user"></i></div>
                         Nhân viên
-                    </a>
-                    <a class="nav-link" href="${pageContext.request.contextPath}/admin/department">
-                        <div class="sb-nav-link-icon"><i class="fas fa-building"></i></div>
-                        Phòng ban
-                    </a>
+                    </a> 
+                    <a class="nav-link" href="${pageContext.request.contextPath}/admin/departments">
+						<div class="sb-nav-link-icon"><i class="fas fa-building"></i></div>
+						Phòng ban
+					</a> </a>
                     <a class="nav-link" href="${pageContext.request.contextPath}/admin/attendance">
                         <div class="sb-nav-link-icon"><i class="fas fa-clock"></i></div>
                         Chấm công

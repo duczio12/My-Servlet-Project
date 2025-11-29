@@ -60,7 +60,7 @@ public class EmployeeServlet extends HttpServlet {
     private void list(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         List<Employee> list = dao.getAll();
         req.setAttribute("listEmployee", list);
-        req.getRequestDispatcher("/admin/employees.jsp").forward(req, resp);
+        req.getRequestDispatcher("/admin/employee.jsp").forward(req, resp);
     }
 
     @Override

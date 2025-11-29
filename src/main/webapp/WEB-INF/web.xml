@@ -33,14 +33,15 @@
         <url-pattern>/admin/employee</url-pattern>
     </servlet-mapping>
 
-    <!-- Department -->
-    <servlet>
-        <servlet-name>DepartmentServlet</servlet-name>
-        <servlet-class>controller.DepartmentServlet</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>DepartmentServlet</servlet-name>
-        <url-pattern>/admin/departments</url-pattern>
-    </servlet-mapping>
+	<!-- Department -->
+	<servlet>
+		<servlet-name>DepartmentServlet</servlet-name>
+		<servlet-class>controller.DepartmentServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>DepartmentServlet</servlet-name>
+		<url-pattern>/admin/departments</url-pattern>
+	</servlet-mapping>
+
 
 </web-app>
