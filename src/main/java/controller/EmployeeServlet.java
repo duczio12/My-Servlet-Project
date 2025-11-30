@@ -5,96 +5,190 @@ import dao.DepartmentDAO;
 import model.Employee;
 import model.Department;
 
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
+import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 public class EmployeeServlet extends HttpServlet {
-
-    private EmployeeDAO dao = new EmployeeDAO();
-    private DepartmentDAO deptDao = new DepartmentDAO();
-
+    private EmployeeDAO employeeDAO;
+    private DepartmentDAO departmentDAO;
+    
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String action = req.getParameter("action");
-        if (action == null) action = "list";
-
-        switch (action) {
-            case "new":
-                showForm(req, resp, new Employee(), "Thêm nhân viên", "insert");
-                break;
-            case "edit":
-                int idEdit = Integer.parseInt(req.getParameter("id"));
-                Employee empEdit = dao.getById(idEdit);
-                showForm(req, resp, empEdit, "Chỉnh sửa nhân viên", "update");
-                break;
-            case "delete":
-                int idDel = Integer.parseInt(req.getParameter("id"));
-                dao.delete(idDel);
-                resp.sendRedirect(req.getContextPath() + "/admin/employee");
-                break;
-            case "view":
-                int idView = Integer.parseInt(req.getParameter("id"));
-                Employee empView = dao.getById(idView);
-                req.setAttribute("employee", empView);
-                req.getRequestDispatcher("/admin/employee_view.jsp").forward(req, resp);
-                break;
-            case "list":
-            default:
-                list(req, resp);
-                break;
+    public void init() {
+        employeeDAO = new EmployeeDAO();
+        departmentDAO = new DepartmentDAO();
+    }
+    
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
+        
+        if (action == null) {
+            action = "list";
+        }
+        
+        try {
+            switch (action) {
+                case "new":
+                    showNewForm(request, response);
+                    break;
+                case "insert":
+                    insertEmployee(request, response);
+                    break;
+                case "delete":
+                    deleteEmployee(request, response);
+                    break;
+                case "edit":
+                    showEditForm(request, response);
+                    break;
+                case "update":
+                    updateEmployee(request, response);
+                    break;
+                case "view":
+                    viewEmployee(request, response);
+                    break;
+                default:
+                    listEmployees(request, response);
+                    break;
+            }
+        } catch (Exception ex) {
+            throw new ServletException(ex);
         }
     }
-
-    private void showForm(HttpServletRequest req, HttpServletResponse resp, Employee emp, String title, String formAction) throws ServletException, IOException {
-        List<Department> depts = deptDao.getAll();
-        req.setAttribute("departments", depts);
-        req.setAttribute("employee", emp);
-        req.setAttribute("formTitle", title);
-        req.setAttribute("formAction", formAction);
-        req.getRequestDispatcher("/admin/employee_form.jsp").forward(req, resp);
-    }
-
-    private void list(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        List<Employee> list = dao.getAll();
-        req.setAttribute("listEmployee", list);
-        req.getRequestDispatcher("/admin/employee.jsp").forward(req, resp);
-    }
-
+    
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        req.setCharacterEncoding("UTF-8");
-        String formAction = req.getParameter("action");
-        if ("insert".equals(formAction)) {
-            Employee emp = readEmployeeFromRequest(req);
-            dao.insert(emp);
-            resp.sendRedirect(req.getContextPath() + "/admin/employee");
-        } else if ("update".equals(formAction)) {
-            Employee emp = readEmployeeFromRequest(req);
-            emp.setId(Integer.parseInt(req.getParameter("id")));
-            dao.update(emp);
-            resp.sendRedirect(req.getContextPath() + "/admin/employee");
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
+    }
+    
+    private void listEmployees(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        List<Employee> listEmployee = employeeDAO.getAllEmployees();
+        request.setAttribute("listEmployee", listEmployee);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/admin/employees/employee_list.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        List<Department> listDepartment = departmentDAO.getAllDepartments();
+        request.setAttribute("listDepartment", listDepartment);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/admin/employees/employee_add.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int id = Integer.parseInt(request.getParameter("id"));
+        Employee existingEmployee = employeeDAO.getEmployeeById(id);
+        List<Department> listDepartment = departmentDAO.getAllDepartments();
+        request.setAttribute("employee", existingEmployee);
+        request.setAttribute("listDepartment", listDepartment);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/admin/employees/employee_edit.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    private void viewEmployee(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int id = Integer.parseInt(request.getParameter("id"));
+        Employee employee = employeeDAO.getEmployeeById(id);
+        request.setAttribute("employee", employee);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/admin/employees/employee_view.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    private void insertEmployee(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        String hoten = request.getParameter("hoten");
+        String gioitinh = request.getParameter("gioitinh");
+        String ngaysinhStr = request.getParameter("ngaysinh");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
+        String diachi = request.getParameter("diachi");
+        int phongban_id = Integer.parseInt(request.getParameter("phongban_id"));
+        String ngayvaolamStr = request.getParameter("ngayvaolam");
+        String chucvu = request.getParameter("chucvu");
+        int taikhoan_id = Integer.parseInt(request.getParameter("taikhoan_id"));
+        
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        java.util.Date ngaysinh = null;
+        java.util.Date ngayvaolam = null;
+        
+        try {
+            ngaysinh = dateFormat.parse(ngaysinhStr);
+            ngayvaolam = dateFormat.parse(ngayvaolamStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        
+        Employee newEmployee = new Employee();
+        newEmployee.setHoten(hoten);
+        newEmployee.setGioitinh(gioitinh);
+        newEmployee.setNgaysinh(ngaysinh);
+        newEmployee.setEmail(email);
+        newEmployee.setPhone(phone);
+        newEmployee.setDiachi(diachi);
+        newEmployee.setPhongban_id(phongban_id);
+        newEmployee.setNgayvaolam(ngayvaolam);
+        newEmployee.setChucvu(chucvu);
+        newEmployee.setTaikhoan_id(taikhoan_id);
+        
+        boolean success = employeeDAO.addEmployee(newEmployee);
+        if (success) {
+            response.sendRedirect("employee?action=list");
         } else {
-            resp.sendRedirect(req.getContextPath() + "/admin/employee");
+            request.setAttribute("errorMessage", "Có lỗi xảy ra khi thêm nhân viên");
+            showNewForm(request, response);
         }
     }
-
-    private Employee readEmployeeFromRequest(HttpServletRequest req) {
-        Employee emp = new Employee();
-        emp.setHoten(req.getParameter("hoten"));
-        emp.setGioitinh(req.getParameter("gioitinh"));
-        emp.setNgaysinh(req.getParameter("ngaysinh"));
-        emp.setEmail(req.getParameter("email"));
-        emp.setPhone(req.getParameter("phone"));
-        emp.setDiachi(req.getParameter("diachi"));
-        String pb = req.getParameter("phongban_id");
-        emp.setPhongban_id((pb == null || pb.isEmpty()) ? 0 : Integer.parseInt(pb));
-        emp.setNgayvaolam(req.getParameter("ngayvaolam"));
-        emp.setChucvu(req.getParameter("chucvu"));
-        String tk = req.getParameter("taikhoan_id");
-        emp.setTaikhoan_id((tk == null || tk.isEmpty()) ? 0 : Integer.parseInt(tk));
-        return emp;
+    
+    private void updateEmployee(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        int id = Integer.parseInt(request.getParameter("id"));
+        String hoten = request.getParameter("hoten");
+        String gioitinh = request.getParameter("gioitinh");
+        String ngaysinhStr = request.getParameter("ngaysinh");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
+        String diachi = request.getParameter("diachi");
+        int phongban_id = Integer.parseInt(request.getParameter("phongban_id"));
+        String ngayvaolamStr = request.getParameter("ngayvaolam");
+        String chucvu = request.getParameter("chucvu");
+        int taikhoan_id = Integer.parseInt(request.getParameter("taikhoan_id"));
+        
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        java.util.Date ngaysinh = null;
+        java.util.Date ngayvaolam = null;
+        
+        try {
+            ngaysinh = dateFormat.parse(ngaysinhStr);
+            ngayvaolam = dateFormat.parse(ngayvaolamStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        
+        Employee employee = new Employee();
+        employee.setId(id);
+        employee.setHoten(hoten);
+        employee.setGioitinh(gioitinh);
+        employee.setNgaysinh(ngaysinh);
+        employee.setEmail(email);
+        employee.setPhone(phone);
+        employee.setDiachi(diachi);
+        employee.setPhongban_id(phongban_id);
+        employee.setNgayvaolam(ngayvaolam);
+        employee.setChucvu(chucvu);
+        employee.setTaikhoan_id(taikhoan_id);
+        
+        boolean success = employeeDAO.updateEmployee(employee);
+        if (success) {
+            response.sendRedirect("employee?action=list");
+        } else {
+            request.setAttribute("errorMessage", "Có lỗi xảy ra khi cập nhật nhân viên");
+            showEditForm(request, response);
+        }
+    }
+    
+    private void deleteEmployee(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int id = Integer.parseInt(request.getParameter("id"));
+        employeeDAO.deleteEmployee(id);
+        response.sendRedirect("employee?action=list");
     }
 }

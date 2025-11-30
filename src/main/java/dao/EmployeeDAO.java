@@ -2,108 +2,135 @@ package dao;
 
 import model.Employee;
 import util.DBConnection;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class EmployeeDAO {
-
-    public List<Employee> getAll() {
-        List<Employee> list = new ArrayList<>();
-        String sql = "SELECT n.*, p.tenphongban AS phongban_ten FROM nhanvien n " +
-                     "LEFT JOIN phongban p ON n.phongban_id = p.id " +
-                     "ORDER BY n.id DESC";
+    
+    public List<Employee> getAllEmployees() {
+        List<Employee> employees = new ArrayList<>();
+        String sql = "SELECT n.*, p.tenphongban FROM nhanvien n LEFT JOIN phongban p ON n.phongban_id = p.id";
+        
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
             while (rs.next()) {
-                Employee emp = mapRow(rs);
-                list.add(emp);
+                Employee employee = new Employee();
+                employee.setId(rs.getInt("id"));
+                employee.setHoten(rs.getString("hoten"));
+                employee.setGioitinh(rs.getString("gioitinh"));
+                employee.setNgaysinh(rs.getDate("ngaysinh"));
+                employee.setEmail(rs.getString("email"));
+                employee.setPhone(rs.getString("phone"));
+                employee.setDiachi(rs.getString("diachi"));
+                employee.setPhongban_id(rs.getInt("phongban_id"));
+                employee.setPhongban_ten(rs.getString("tenphongban"));
+                employee.setNgayvaolam(rs.getDate("ngayvaolam"));
+                employee.setChucvu(rs.getString("chucvu"));
+                employee.setTaikhoan_id(rs.getInt("taikhoan_id"));
+                employees.add(employee);
             }
-        } catch (Exception e) { e.printStackTrace(); }
-        return list;
+        } catch (SQLException e) {
+            System.err.println("Lỗi getAllEmployees: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return employees;
     }
-
-    public Employee getById(int id) {
-        String sql = "SELECT n.*, p.tenphongban AS phongban_ten FROM nhanvien n " +
-                     "LEFT JOIN phongban p ON n.phongban_id = p.id WHERE n.id = ?";
+    
+    public Employee getEmployeeById(int id) {
+        Employee employee = null;
+        String sql = "SELECT n.*, p.tenphongban FROM nhanvien n LEFT JOIN phongban p ON n.phongban_id = p.id WHERE n.id = ?";
+        
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return mapRow(rs);
+                    employee = new Employee();
+                    employee.setId(rs.getInt("id"));
+                    employee.setHoten(rs.getString("hoten"));
+                    employee.setGioitinh(rs.getString("gioitinh"));
+                    employee.setNgaysinh(rs.getDate("ngaysinh"));
+                    employee.setEmail(rs.getString("email"));
+                    employee.setPhone(rs.getString("phone"));
+                    employee.setDiachi(rs.getString("diachi"));
+                    employee.setPhongban_id(rs.getInt("phongban_id"));
+                    employee.setPhongban_ten(rs.getString("tenphongban"));
+                    employee.setNgayvaolam(rs.getDate("ngayvaolam"));
+                    employee.setChucvu(rs.getString("chucvu"));
+                    employee.setTaikhoan_id(rs.getInt("taikhoan_id"));
                 }
             }
-        } catch (Exception e) { e.printStackTrace(); }
-        return null;
+        } catch (SQLException e) {
+            System.err.println("Lỗi getEmployeeById: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return employee;
     }
-
-    public boolean insert(Employee emp) {
-        String sql = "INSERT INTO nhanvien (hoten, gioitinh, ngaysinh, email, phone, diachi, phongban_id, ngayvaolam, chucvu, taikhoan_id) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
+    public boolean addEmployee(Employee employee) {
+        String sql = "INSERT INTO nhanvien (hoten, gioitinh, ngaysinh, email, phone, diachi, phongban_id, ngayvaolam, chucvu, taikhoan_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            setPreparedStatementFromEmployee(ps, emp);
-            int row = ps.executeUpdate();
-            return row > 0;
-        } catch (Exception e) { e.printStackTrace(); }
-        return false;
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, employee.getHoten());
+            stmt.setString(2, employee.getGioitinh());
+            stmt.setDate(3, new java.sql.Date(employee.getNgaysinh().getTime()));
+            stmt.setString(4, employee.getEmail());
+            stmt.setString(5, employee.getPhone());
+            stmt.setString(6, employee.getDiachi());
+            stmt.setInt(7, employee.getPhongban_id());
+            stmt.setDate(8, new java.sql.Date(employee.getNgayvaolam().getTime()));
+            stmt.setString(9, employee.getChucvu());
+            stmt.setInt(10, employee.getTaikhoan_id());
+            
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
-
-    public boolean update(Employee emp) {
+    
+    public boolean updateEmployee(Employee employee) {
         String sql = "UPDATE nhanvien SET hoten=?, gioitinh=?, ngaysinh=?, email=?, phone=?, diachi=?, phongban_id=?, ngayvaolam=?, chucvu=?, taikhoan_id=? WHERE id=?";
+        
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            setPreparedStatementFromEmployee(ps, emp);
-            ps.setInt(11, emp.getId());
-            int row = ps.executeUpdate();
-            return row > 0;
-        } catch (Exception e) { e.printStackTrace(); }
-        return false;
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, employee.getHoten());
+            stmt.setString(2, employee.getGioitinh());
+            stmt.setDate(3, new java.sql.Date(employee.getNgaysinh().getTime()));
+            stmt.setString(4, employee.getEmail());
+            stmt.setString(5, employee.getPhone());
+            stmt.setString(6, employee.getDiachi());
+            stmt.setInt(7, employee.getPhongban_id());
+            stmt.setDate(8, new java.sql.Date(employee.getNgayvaolam().getTime()));
+            stmt.setString(9, employee.getChucvu());
+            stmt.setInt(10, employee.getTaikhoan_id());
+            stmt.setInt(11, employee.getId());
+            
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
-
-    public boolean delete(int id) {
-        String sql = "DELETE FROM nhanvien WHERE id = ?";
+    
+    public boolean deleteEmployee(int id) {
+        String sql = "DELETE FROM nhanvien WHERE id=?";
+        
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            int row = ps.executeUpdate();
-            return row > 0;
-        } catch (Exception e) { e.printStackTrace(); }
-        return false;
-    }
-
-    // helper
-    private Employee mapRow(ResultSet rs) throws SQLException {
-        Employee emp = new Employee();
-        emp.setId(rs.getInt("id"));
-        emp.setHoten(rs.getString("hoten"));
-        emp.setGioitinh(rs.getString("gioitinh"));
-        emp.setNgaysinh(rs.getString("ngaysinh"));
-        emp.setEmail(rs.getString("email"));
-        emp.setPhone(rs.getString("phone"));
-        emp.setDiachi(rs.getString("diachi"));
-        emp.setPhongban_id(rs.getInt("phongban_id"));
-        // phongban_ten trong DB là tenphongban
-        try { emp.setPhongban_ten(rs.getString("phongban_ten")); } catch (SQLException ignored) {}
-        emp.setNgayvaolam(rs.getString("ngayvaolam"));
-        emp.setChucvu(rs.getString("chucvu"));
-        emp.setTaikhoan_id(rs.getInt("taikhoan_id"));
-        return emp;
-    }
-
-    private void setPreparedStatementFromEmployee(PreparedStatement ps, Employee emp) throws SQLException {
-        ps.setString(1, emp.getHoten());
-        ps.setString(2, emp.getGioitinh());
-        ps.setString(3, emp.getNgaysinh());
-        ps.setString(4, emp.getEmail());
-        ps.setString(5, emp.getPhone());
-        ps.setString(6, emp.getDiachi());
-        if (emp.getPhongban_id() == 0) ps.setNull(7, Types.INTEGER); else ps.setInt(7, emp.getPhongban_id());
-        ps.setString(8, emp.getNgayvaolam());
-        ps.setString(9, emp.getChucvu());
-        if (emp.getTaikhoan_id() == 0) ps.setNull(10, Types.INTEGER); else ps.setInt(10, emp.getTaikhoan_id());
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, id);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

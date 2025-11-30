@@ -3,77 +3,117 @@ package controller;
 import dao.DepartmentDAO;
 import model.Department;
 
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 
 public class DepartmentServlet extends HttpServlet {
-
-    private DepartmentDAO dao = new DepartmentDAO();
-
+    private DepartmentDAO departmentDAO;
+    
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-
-        String action = req.getParameter("action");
-        if (action == null || action.isEmpty()) {
-            // LIST
-            List<Department> list = dao.getAll();
-            req.setAttribute("list", list);
-            req.getRequestDispatcher("/admin/departments/department-list.jsp").forward(req, resp);
-            return;
+    public void init() {
+        departmentDAO = new DepartmentDAO();
+    }
+    
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String action = request.getParameter("action");
+        
+        if (action == null) {
+            action = "list";
         }
-
-        switch (action) {
-            case "add":
-                req.getRequestDispatcher("/admin/departments/department-add.jsp").forward(req, resp);
-                break;
-
-            case "edit":
-                int id = Integer.parseInt(req.getParameter("id"));
-                req.setAttribute("dept", dao.getById(id));
-                req.getRequestDispatcher("/admin/departments/department-edit.jsp").forward(req, resp);
-                break;
-
-            case "delete":
-                int idDel = Integer.parseInt(req.getParameter("id"));
-                dao.delete(idDel);
-                resp.sendRedirect(req.getContextPath() + "/admin/departments");
-                break;
-
-            default:
-                resp.sendRedirect(req.getContextPath() + "/admin/departments");
+        
+        try {
+            switch (action) {
+                case "new":
+                    showNewForm(request, response);
+                    break;
+                case "insert":
+                    insertDepartment(request, response);
+                    break;
+                case "delete":
+                    deleteDepartment(request, response);
+                    break;
+                case "edit":
+                    showEditForm(request, response);
+                    break;
+                case "update":
+                    updateDepartment(request, response);
+                    break;
+                default:
+                    listDepartments(request, response);
+                    break;
+            }
+        } catch (Exception ex) {
+            throw new ServletException(ex);
         }
     }
-
+    
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-
-        req.setCharacterEncoding("UTF-8");
-        String action = req.getParameter("action");
-
-        switch (action) {
-            case "add":
-                Department d1 = new Department();
-                d1.setTenphongban(req.getParameter("tenphongban"));
-                d1.setNguoiquanly(req.getParameter("nguoiquanly"));
-                dao.insert(d1);
-                resp.sendRedirect(req.getContextPath() + "/admin/departments");
-                break;
-
-            case "update":
-                Department d2 = new Department();
-                d2.setId(Integer.parseInt(req.getParameter("id")));
-                d2.setTenphongban(req.getParameter("tenphongban"));
-                d2.setNguoiquanly(req.getParameter("nguoiquanly"));
-                dao.update(d2);
-                resp.sendRedirect(req.getContextPath() + "/admin/departments");
-                break;
-
-            default:
-                resp.sendRedirect(req.getContextPath() + "/admin/departments");
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
+    }
+    
+    private void listDepartments(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        List<Department> listDepartment = departmentDAO.getAllDepartments();
+        request.setAttribute("listDepartment", listDepartment);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/admin/departments/department_list.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    private void showNewForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/admin/departments/department_add.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int id = Integer.parseInt(request.getParameter("id"));
+        Department existingDepartment = departmentDAO.getDepartmentById(id);
+        request.setAttribute("department", existingDepartment);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/admin/departments/department_edit.jsp");
+        dispatcher.forward(request, response);
+    }
+    
+    private void insertDepartment(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        String tenphongban = request.getParameter("tenphongban");
+        String nguoiquanly = request.getParameter("nguoiquanly");
+        
+        Department newDepartment = new Department();
+        newDepartment.setTenphongban(tenphongban);
+        newDepartment.setNguoiquanly(nguoiquanly);
+        
+        boolean success = departmentDAO.addDepartment(newDepartment);
+        if (success) {
+            response.sendRedirect("department?action=list");
+        } else {
+            request.setAttribute("errorMessage", "Có lỗi xảy ra khi thêm phòng ban");
+            showNewForm(request, response);
         }
+    }
+    
+    private void updateDepartment(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        int id = Integer.parseInt(request.getParameter("id"));
+        String tenphongban = request.getParameter("tenphongban");
+        String nguoiquanly = request.getParameter("nguoiquanly");
+        
+        Department department = new Department();
+        department.setId(id);
+        department.setTenphongban(tenphongban);
+        department.setNguoiquanly(nguoiquanly);
+        
+        boolean success = departmentDAO.updateDepartment(department);
+        if (success) {
+            response.sendRedirect("department?action=list");
+        } else {
+            request.setAttribute("errorMessage", "Có lỗi xảy ra khi cập nhật phòng ban");
+            showEditForm(request, response);
+        }
+    }
+    
+    private void deleteDepartment(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        int id = Integer.parseInt(request.getParameter("id"));
+        departmentDAO.deleteDepartment(id);
+        response.sendRedirect("department?action=list");
     }
 }
